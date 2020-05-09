@@ -12,7 +12,7 @@ const {
   InteractionManager,
   Platform,
 } = ReactNative;
-
+import _ from 'lodash';
 const ViewPagerAndroid = require('@react-native-community/viewpager');
 const TimerMixin = require('react-timer-mixin');
 const ViewPager = require('@react-native-community/viewpager');
@@ -346,6 +346,25 @@ const ScrollableTabView = createReactClass({
     }
   },
 
+  isCloseToBottom({layoutMeasurement, contentOffset, contentSize}) {
+    const paddingToBottom = 20;
+    return (
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom
+    );
+  },
+
+  onEndReached: _.debounce(
+      function() {
+        this.props.onEndReached(this.state.currentPage);
+      },
+      800,
+    {
+      leading: true,
+      trailing: false,
+    },
+  ),
+
   _handleLayout(e) {
     const { width, } = e.nativeEvent.layout;
 
@@ -420,6 +439,11 @@ const ScrollableTabView = createReactClass({
 
     return <ContainerView style={[styles.container, this.props.style, ]}
       onLayout={this._handleLayout}
+      onScroll={({nativeEvent}) => {
+        if (this.isCloseToBottom(nativeEvent)) {
+          this.onEndReached();
+        }
+      }}
       ref={contentView => {this.contentView = contentView;}}
       onMomentumScrollEnd={event => {this.contentScrollDistance = event.nativeEvent.contentOffset.y;}}
       stickyHeaderIndices={this.props.collapsableBar ? [1, ] : []}>
